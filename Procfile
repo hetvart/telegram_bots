@@ -1,1 +1,1 @@
-web: python kronverk.py
+bot: python kronverk.py
