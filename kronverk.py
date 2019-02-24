@@ -1,9 +1,11 @@
 import os
+from random import choice
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 
 from apis import CurrencyConverter, OpenWeatherApi
+from vars import PREDICTIONS
 
 
 def exchange_rate(bot, update):
@@ -24,6 +26,12 @@ def start(bot, update):
            'Якщо бажаєш дізнатись актуальний курс валют, просто ' \
            'напиши /exchange\_rate. Щоб дізнатись погоду, просто відправ мені своє розташування.'
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.MARKDOWN)
+
+
+def fortune_cookie(bot, update):
+    chat_id = update.message.chat_id
+    text = choice(PREDICTIONS)
+    bot.send_message(chat_id=chat_id, text=text)
 
 
 def reply_to_location(bot, update):
@@ -47,6 +55,7 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('exchange_rate', exchange_rate))
+    dp.add_handler(CommandHandler('fortune_cookie', fortune_cookie))
     wrong_command_handler = MessageHandler(Filters.command, reply_to_wrong_command)
     message_handler = MessageHandler(Filters.text, reply_to_message)
     location_handler = MessageHandler(Filters.location, reply_to_location)
