@@ -29,7 +29,7 @@ def start(bot, update):
 def reply_to_location(bot, update):
     location = update.message.location
     weather_api = OpenWeatherApi()
-    weather = weather_api.get_current_weather_data_by_coordinations(lat=location['latitude'], lon=location['longitude'])
+    weather = weather_api.get_current_weather_data(lat=location['latitude'], lon=location['longitude'])
     bot.send_message(chat_id=update.message.chat_id, text=weather)
 
 
