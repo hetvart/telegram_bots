@@ -1,7 +1,7 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 
-from currency_api import CurrencyConverter
+from apis import CurrencyConverter, OpenWeatherApi
 
 
 def exchange_rate(bot, update):
@@ -16,23 +16,19 @@ def exchange_rate(bot, update):
     bot.send_message(chat_id=chat_id, text=text)
 
 
-def convert(bot, update):
-    chat_id = update.message.chat_id
-    converter = CurrencyConverter()
-    text = str(converter.convert()) + ' грн'
-    bot.send_message(chat_id=chat_id, text=text)
-
-
-def help(bot, update):
+def start(bot, update):
     chat_id = update.message.chat_id
     text = 'Привіт! Мене звати Кронверк. Я простий бот, який дозволяє швидко дізнатись курс валют на поточну дату. ' \
            'Якщо бажаєш дізнатись актуальний курс валют, просто ' \
            'напиши /exchange\_rate.'
-    # text = 'Привіт! Мене звати Кронверк. Я простий бот, який дозволяє швидко дізнатись курс валют на поточну дату ' \
-    #        'або конвертувати валюту з однієї в іншу. ' \
-    #        'Якщо бажаєш дізнатись актуальний курс валют, просто ' \
-    #        'напиши /exchange\_rate. Щоб конвертувати валюту, напиши /convert'
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.MARKDOWN)
+
+
+def reply_to_location(bot, update):
+    location = update.message.location
+    weather_api = OpenWeatherApi()
+    weather = weather_api.get_current_weather_data_by_coordinations(lat=location['latitude'], lon=location['longitude'])
+    bot.send_message(chat_id=update.message.chat_id, text=weather)
 
 
 def reply_to_message(bot, update):
@@ -46,13 +42,14 @@ def reply_to_wrong_command(bot, update):
 def main():
     updater = Updater(token='681821774:AAHb_S7afR3BUOfHjwPqTlxAwY29kNoAxlE')
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler('help', help))
+    dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('exchange_rate', exchange_rate))
-    # dp.add_handler(CommandHandler('convert', convert))
     wrong_command_handler = MessageHandler(Filters.command, reply_to_wrong_command)
     message_handler = MessageHandler(Filters.text, reply_to_message)
+    location_handler = MessageHandler(Filters.location, reply_to_location)
     dp.add_handler(message_handler)
     dp.add_handler(wrong_command_handler)
+    dp.add_handler(location_handler)
     updater.start_polling()
     updater.idle()
 
