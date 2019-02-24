@@ -22,7 +22,7 @@ def start(bot, update):
     chat_id = update.message.chat_id
     text = 'Привіт! Мене звати Кронверк. Я простий бот, який вміє робити різні цікаві штуки.' \
            'Якщо бажаєш дізнатись актуальний курс валют, просто ' \
-           'напиши /exchange\_rate.'
+           'напиши /exchange\_rate. Щоб дізнатись погоду, просто відправ мені своє розташування.'
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.MARKDOWN)
 
 
