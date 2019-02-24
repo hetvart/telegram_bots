@@ -1,3 +1,4 @@
+import os
 import requests
 
 
@@ -10,7 +11,7 @@ class CurrencyConverter(object):
 
 class OpenWeatherApi(object):
     api_url = 'http://api.openweathermap.org/data/2.5/weather'
-    token = '6db04ae35b9e23276902b7b6bb48119a'
+    token = os.environ.get('OPEN_WEATHER_API_TOKEN')
 
     def get_current_weather_data_by_coordinations(self, lat=50.43, lon=30.52):
         query = '?lat={lat}&lon={lon}&units=metric&APPID={token}'.format(lat=lat, lon=lon, token=self.token)

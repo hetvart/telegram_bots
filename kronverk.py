@@ -1,3 +1,5 @@
+import os
+
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 
@@ -18,7 +20,7 @@ def exchange_rate(bot, update):
 
 def start(bot, update):
     chat_id = update.message.chat_id
-    text = 'Привіт! Мене звати Кронверк. Я простий бот, який дозволяє швидко дізнатись курс валют на поточну дату. ' \
+    text = 'Привіт! Мене звати Кронверк. Я простий бот, який вміє робити різні цікаві штуки.' \
            'Якщо бажаєш дізнатись актуальний курс валют, просто ' \
            'напиши /exchange\_rate.'
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.MARKDOWN)
@@ -40,7 +42,8 @@ def reply_to_wrong_command(bot, update):
 
 
 def main():
-    updater = Updater(token='681821774:AAHb_S7afR3BUOfHjwPqTlxAwY29kNoAxlE')
+    telegram_api_bot_token = os.environ.get('TELEGRAM_API_BOT_TOKEN')
+    updater = Updater(token=telegram_api_bot_token)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('exchange_rate', exchange_rate))
