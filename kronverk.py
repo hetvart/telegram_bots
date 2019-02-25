@@ -1,10 +1,12 @@
 import os
+from operator import itemgetter
 from random import choice
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 
 from apis import CurrencyConverter, OpenWeatherApi
+from tools import flag
 from vars import PREDICTIONS
 
 
@@ -13,10 +15,15 @@ def exchange_rate(bot, update):
     converter = CurrencyConverter()
     top_currencies_rates = [rate for rate in converter.get_exchange_rate() if
                             rate['cc'] in ('USD', 'EUR', 'GBP', 'RUB')]
-    text = '\n'.join(['{currency_name} ({currency_code}): {currency_rate} грн'.format(currency_name=rate['txt'],
-                                                                                      currency_code=rate['cc'],
-                                                                                      currency_rate=str(rate['rate']))
+    top_currencies_rates = sorted(top_currencies_rates, key=itemgetter('rate'), reverse=True)
+    countries_flags = iter([flag(code) for code in ('gb', 'eu', 'us', 'ru')])
+    text = '\n'.join(['{flag} {currency_name} ({currency_code}): {currency_rate} грн'.format(currency_name=rate['txt'],
+                                                                                             currency_code=rate['cc'],
+                                                                                             currency_rate=str(
+                                                                                                 rate['rate']),
+                                                                                             flag=next(countries_flags))
                       for rate in top_currencies_rates])
+
     bot.send_message(chat_id=chat_id, text=text)
 
 
