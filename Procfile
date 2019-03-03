@@ -1,1 +1,1 @@
-bot: python kronverk.py
+bot: python src/kronverk.py
