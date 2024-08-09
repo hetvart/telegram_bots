@@ -1,2 +1,4 @@
-python-telegram-bot==11.1.0
-requests==2.21.0
+python-telegram-bot==21.4
+requests==2.32.3
+fastapi==0.112.0
+uvicorn
