@@ -1,57 +1,91 @@
+import logging
 import os
 from random import choice
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import (
+    ApplicationBuilder,
+    ContextTypes,
+    Updater,
+    CommandHandler,
+    MessageHandler,
+    filters,
+)
+from telegram import KeyboardButton, ReplyKeyboardMarkup, Update
 
-from src.apis import CurrencyConverter, OpenWeatherApi
-from src.vars import PREDICTIONS
+from apis import CurrencyConverter, OpenWeatherApi
+from vars import PREDICTIONS, SHIT
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.ERROR
+)
 
 
-def start(bot, update):
-    weather_btn = KeyboardButton(text='Погода', request_location=True)
-    exchange_rate_btn = KeyboardButton(text='Курс валют')
-    fortune_cookie_btn = KeyboardButton(text='Передбачення')
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    weather_btn = KeyboardButton(text="Погода", request_location=True)
+    exchange_rate_btn = KeyboardButton(text="Курс валют")
+    fortune_cookie_btn = KeyboardButton(text="Передбачення")
     menu = [[weather_btn, exchange_rate_btn, fortune_cookie_btn]]
     reply_markup = ReplyKeyboardMarkup(menu, resize_keyboard=True)
-    bot.send_message(chat_id=update.message.chat_id, text='Йоу, я Кронверк! Чим я можу тобі допомогти?',
-                     reply_markup=reply_markup)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Йоу, я Кронверк! Чим я можу тобі допомогти?",
+        reply_markup=reply_markup,
+    )
 
 
-def reply_to_location(bot, update):
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"{update.message.text}? {choice(SHIT)}",
+    )
+
+
+async def currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    converter = CurrencyConverter()
+    rate = converter.get_base_exchange_rate()
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=rate)
+
+
+async def location(update: Update, context: ContextTypes.DEFAULT_TYPE):
     location = update.message.location
     weather_api = OpenWeatherApi()
-    weather = weather_api.get_current_weather_data(lat=location['latitude'], lon=location['longitude'])
-    bot.send_message(chat_id=update.message.chat_id, text=weather)
+    weather = weather_api.get_current_weather_data(
+        lat=location["latitude"], lon=location["longitude"]
+    )
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=weather)
 
 
-def reply_to_message(bot, update):
-    text = 'Можливо, ти ввів якийсь лєвак. Топаз, повтори команду!'
-    if update.message.text == 'Курс валют':
-        converter = CurrencyConverter()
-        text = converter.get_base_exchange_rate()
-    if update.message.text == 'Передбачення':
-        text = choice(PREDICTIONS)
-    bot.send_message(chat_id=update.message.chat_id, text=text)
+async def fortune_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    prediction = choice(PREDICTIONS)
+
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=prediction)
 
 
-def reply_to_wrong_command(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text='Можливо, ти ввів якийсь лєвак. Топаз, повтори команду!')
+if __name__ == "__main__":
+    application = ApplicationBuilder().token(os.getenv("KRONVERK_API_TOKEN")).build()
 
+    # Start command handler
+    start_handler = CommandHandler("start", start)
+    application.add_handler(start_handler)
 
-def main():
-    telegram_api_bot_token = os.environ.get('TELEGRAM_API_BOT_TOKEN')
-    updater = Updater(token=telegram_api_bot_token)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler('start', start))
-    wrong_command_handler = MessageHandler(Filters.command, reply_to_wrong_command)
-    message_handler = MessageHandler(Filters.text, reply_to_message)
-    location_handler = MessageHandler(Filters.location, reply_to_location)
-    dp.add_handler(message_handler)
-    dp.add_handler(wrong_command_handler)
-    dp.add_handler(location_handler)
-    updater.start_polling()
-    updater.idle()
+    # Location handler
+    location_handler = MessageHandler(filters.LOCATION, location)
+    application.add_handler(location_handler)
 
+    # Fortune handler
+    fortune_handler = MessageHandler(
+        filters.TEXT & filters.Regex("^Передбачення$"), fortune_handler
+    )
+    application.add_handler(fortune_handler)
 
-main()
+    # Currency rate handler
+    currency_handler = MessageHandler(
+        filters.TEXT & filters.Regex("^Курс валют$"), currency
+    )
+    application.add_handler(currency_handler)
+
+    # Echo handler
+    echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
+    application.add_handler(echo_handler)
+
+    application.run_polling()
